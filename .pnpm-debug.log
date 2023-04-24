@@ -1,0 +1,102 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 1
+  },
+  "1 debug pnpm:package-manifest": {
+    "initial": {
+      "name": "vue2",
+      "version": "1.0.0",
+      "description": "vue手写简易源码",
+      "main": "index.js",
+      "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+      },
+      "author": "",
+      "license": "ISC"
+    },
+    "prefix": "C:\\Users\\24969\\Desktop\\vue源码\\vue2"
+  },
+  "2 debug pnpm:context": {
+    "currentLockfileExists": false,
+    "storeDir": "C:\\Users\\24969\\.pnpm-store\\v3",
+    "virtualStoreDir": "C:\\Users\\24969\\Desktop\\vue源码\\vue2\\node_modules\\.pnpm"
+  },
+  "3 debug pnpm:stage": {
+    "prefix": "C:\\Users\\24969\\Desktop\\vue源码\\vue2",
+    "stage": "resolution_started"
+  },
+  "4 debug pnpm:_dependency_resolved": {
+    "resolution": "registry.npmjs.org/rollup-plugin-babel/4.4.0",
+    "wanted": {
+      "dependentId": ".",
+      "name": "rollup-plugin-babel",
+      "rawSpec": "latest"
+    }
+  },
+  "5 debug pnpm:deprecation": {
+    "deprecated": "This package has been deprecated and is no longer maintained. Please use @rollup/plugin-babel.",
+    "depth": 0,
+    "pkgId": "registry.npmjs.org/rollup-plugin-babel/4.4.0",
+    "pkgName": "rollup-plugin-babel",
+    "pkgVersion": "4.4.0",
+    "prefix": "C:\\Users\\24969\\Desktop\\vue源码\\vue2"
+  },
+  "6 debug pnpm:progress": {
+    "packageId": "registry.npmjs.org/rollup-plugin-babel/4.4.0",
+    "requester": "C:\\Users\\24969\\Desktop\\vue源码\\vue2",
+    "status": "resolved"
+  },
+  "7 debug pnpm:fetching-progress": {
+    "attempt": 1,
+    "packageId": "registry.npmjs.org/rollup-plugin-babel/4.4.0",
+    "size": 12802,
+    "status": "started"
+  },
+  "8 debug pnpm:update-check": {
+    "currentVersion": "6.32.8",
+    "latestVersion": "8.3.0"
+  },
+  "9 debug pnpm:_dependency_resolved": {
+    "resolution": "registry.npmjs.org/rollup/3.20.4",
+    "wanted": {
+      "dependentId": ".",
+      "name": "rollup",
+      "rawSpec": "latest"
+    }
+  },
+  "10 debug pnpm:progress": {
+    "packageId": "registry.npmjs.org/rollup/3.20.4",
+    "requester": "C:\\Users\\24969\\Desktop\\vue源码\\vue2",
+    "status": "resolved"
+  },
+  "11 debug pnpm:progress": {
+    "packageId": "registry.npmjs.org/rollup-plugin-babel/4.4.0",
+    "requester": "C:\\Users\\24969\\Desktop\\vue源码\\vue2",
+    "status": "fetched"
+  },
+  "12 debug pnpm:fetching-progress": {
+    "attempt": 1,
+    "packageId": "registry.npmjs.org/rollup/3.20.4",
+    "size": 521434,
+    "status": "started"
+  },
+  "13 error pnpm": {
+    "code": "ERR_PNPM_FETCH_404",
+    "hint": "@babeel/core is not in the npm registry, or you have no permission to fetch it.\n\nAn authorization header was used: Bearer npm_[hidden]",
+    "request": {
+      "authHeaderValue": "Bearer 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",
+      "url": "https://registry.npmjs.org/@babeel%2Fcore"
+    },
+    "response": {
+      "size": 0
+    },
+    "pkgName": "@babeel/core",
+    "pkgsStack": [],
+    "err": {
+      "name": "pnpm",
+      "message": "GET https://registry.npmjs.org/@babeel%2Fcore: Not Found - 404",
+      "code": "ERR_PNPM_FETCH_404",
+      "stack": "pnpm: GET https://registry.npmjs.org/@babeel%2Fcore: Not Found - 404\n    at RetryOperation._fn (C:\\Users\\24969\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.8\\node_modules\\pnpm\\dist\\pnpm.cjs:85779:19)\n    at runMicrotasks (<anonymous>)\n    at processTicksAndRejections (internal/process/task_queues.js:95:5)"
+    }
+  }
+}
