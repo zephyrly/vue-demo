@@ -2,6 +2,7 @@
 // init.js
 import { initState } from './state'
 import { compileToFunction } from './compiler/index'
+import { mountComponent } from './lifecycle'
 
 // 给Vue增加init方法
 export function initMinix(Vue) {
@@ -38,14 +39,16 @@ export function initMinix(Vue) {
             }
 
             // 编译template模板
-            if (template) {
+            if (template && el) {
                 const render = compileToFunction(template)
                 ops.render = render // jsx最终会编译成h('xxx')
             }
             ops.render
+            console.log('ast树形结构',ops.render)
 
             // script 标签引用vue.config.js 这个编译过程在浏览器运行
             // runtime是不包含模板编译，整个编译打包时通过loader进行转义vue文件，runtime时不能使用template
         }
+        mountComponent(vm,el); // 组件挂载
     }
 }

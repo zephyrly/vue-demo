@@ -8,8 +8,8 @@
 </head>
 <body>
     <div id="app">
-        <div style="color:red;background-color: red;font-size: 12px;">
-            {{name}} dsaf {{aaa}}
+        <div key="123" style="color:red;font-size: 12px;">
+            {{name}} '   ' {{address.name}}
         </div>
         <span style="font: 300;">{{age}}</span>
     </div>
@@ -34,6 +34,14 @@
         // 修改数组，很少有用数组索引操作数组，因为遍历劫持每一个太消耗性能
         // 检测使用了数组方法push split
         vm.hobby.push({c:2})
+
+        
+        setTimeout(()=>{
+            vm.name = 'okzfans'
+            vm.age = 18
+
+            vm._update(vm._render()) // 数据变化,手动更新数据真实dom
+        },1000)
 
         //1.模板引擎 性能会比较差 需要进行正则匹配替换 1.0的时候 没有引入虚拟dom进行修改
         //2..虚拟dom,数据变化通过比较虚拟dom,最后进行数据更新

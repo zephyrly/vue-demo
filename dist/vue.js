@@ -373,7 +373,7 @@
         });
         attr.value = obj;
       }
-      str += "".concat(attr.name, ":").concat(JSON.stringify(attr.value)); // a:b,c:d,
+      str += "".concat(attr.name, ":").concat(JSON.stringify(attr.value), ","); // a:b,c:d,
     };
     for (var i = 0; i < attrs.length; i++) {
       _loop();
@@ -428,12 +428,143 @@
     var ast = parseHTML(template);
 
     //生成render方法(render方法执行后返回虚拟DOM)
-    console.log(ast);
-    ast = codegen(ast);
-    console.log(ast);
-    // render(){
+
+    var code = codegen(ast);
+    //with(this){
+    //     console.log(this.a)
     // }
+    code = "with(this){return ".concat(code, "}");
+    var render = new Function(code); //根据代码生成render函数
+
+    return render;
   }
+
+  // vdom index.js
+  function createElementVNode(vm, tag) {
+    var data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    if (data === null) {
+      data = {};
+    }
+    var key = data.key;
+    if (key) {
+      delete data.key;
+    }
+    for (var _len = arguments.length, children = new Array(_len > 3 ? _len - 3 : 0), _key = 3; _key < _len; _key++) {
+      children[_key - 3] = arguments[_key];
+    }
+    return vnode(vm, tag, data.key, data, children);
+  }
+
+  // _v()
+  function createTextVNode(vm, text) {
+    return vnode(vm, undefined, undefined, undefined, undefined, text);
+  }
+
+  // 与ast的区别，ast做的语法层面的转化,描述的是语法本身（css,js,html）
+  // vnode 描述的dom元素，可以增加一些自定义属性(js)
+  function vnode(vm, tag, key, data, children, text) {
+    return {
+      vm: vm,
+      tag: tag,
+      key: key,
+      data: data,
+      children: children,
+      text: text
+      // .......
+    };
+  }
+
+  // lifecycle.js
+  function createElm(vnode) {
+    var tag = vnode.tag,
+      data = vnode.data,
+      children = vnode.children,
+      text = vnode.text;
+    if (typeof tag === 'string') {
+      //标签
+      vnode.el = document.createElement(tag); // 将真实节点与虚拟节点进行对应，后续方便修改属性
+      patchProps(vnode.el, data);
+      children.forEach(function (child) {
+        vnode.el.appendChild(createElm(child));
+      });
+    } else {
+      vnode.el = document.createTextNode(text);
+    }
+    return vnode.el;
+  }
+  function patchProps(el, props) {
+    for (var key in props) {
+      if (key === 'style') {
+        // style(color:'red')
+        for (var styleName in props.style) {
+          el.style[styleName] = props.style[styleName];
+        }
+      } else {
+        el.setAttribute(key, props[key]);
+      }
+    }
+  }
+  function patch(oldVNode, vnode) {
+    // 初渲染流程
+    var isRealElement = oldVNode.nodeType;
+    if (isRealElement) {
+      var elm = oldVNode; // 获取真实元素
+      var parentElm = elm.parentNode; // 拿到父元素
+      var newElm = createElm(vnode); // 生成真实dom
+      parentElm.insertBefore(newElm, elm.nextSibiling);
+      parentElm.removeChild(elm); // 删除老节点
+      console.log(newElm);
+      return newElm;
+    }
+  }
+  function initLifeCycle(Vue) {
+    // 虚拟dom转换真实dom
+    Vue.prototype._update = function (vnode) {
+      var vm = this;
+      var el = vm.$el;
+
+      // patch 初始化，更新功能
+
+      vm.$el = patch(el, vnode);
+    };
+
+    // _c('div',{},...children)
+    Vue.prototype._c = function () {
+      return createElementVNode.apply(void 0, [this].concat(Array.prototype.slice.call(arguments)));
+    };
+
+    // _v(text)
+    Vue.prototype._v = function () {
+      return createTextVNode.apply(void 0, [this].concat(Array.prototype.slice.call(arguments)));
+    };
+    Vue.prototype._s = function (value) {
+      if (value !== 'object') {
+        return value;
+      }
+      return JSON.stringify(value);
+    };
+    Vue.prototype._render = function () {
+      var vm = this;
+      console.log('_render');
+      // 让vm中的this指向vm
+      return this.$options.render.call(vm);
+    };
+  }
+
+  function mountComponent(vm, el) {
+    vm.$el = el;
+    // 1.调用render方法产生虚拟节点,虚拟dom
+    vm._update(vm._render());
+
+    // 2.根据虚拟dom产生真实dom
+
+    // 3.插入el元素中
+  }
+
+  // vue核心流程  1)创建响应式数据  2）模板转换ast语法树
+  // 3)将ast语法树转换成render函数 4)后续每次数据更新可以只执行render函数(无需再次执行ast转换)
+  // render函数会去产生虚拟节点
+  // 根据生成的虚拟节点创建真实DOM
 
   //  initMinix
 
@@ -472,16 +603,19 @@
         }
 
         // 编译template模板
-        if (template) {
+        if (template && el) {
           var render = compileToFunction(template);
           ops.render = render; // jsx最终会编译成h('xxx')
         }
 
         ops.render;
+        console.log('ast树形结构', ops.render);
 
         // script 标签引用vue.config.js 这个编译过程在浏览器运行
         // runtime是不包含模板编译，整个编译打包时通过loader进行转义vue文件，runtime时不能使用template
       }
+
+      mountComponent(vm, el); // 组件挂载
     };
   }
 
@@ -491,6 +625,7 @@
     this._init(options);
   }
   initMinix(Vue);
+  initLifeCycle(Vue);
 
   return Vue;
 

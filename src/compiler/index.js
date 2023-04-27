@@ -16,7 +16,7 @@ function genProps(attrs){
             attr.value = obj
         }
 
-        str+=`${attr.name}:${JSON.stringify(attr.value)}`  // a:b,c:d,
+        str+=`${attr.name}:${JSON.stringify(attr.value)},`  // a:b,c:d,
     }
     return `{${str.slice(0,-1)}}` // a:b,c:d
 }
@@ -76,10 +76,13 @@ export function compileToFunction(template) {
     let ast = parseHTML(template)
 
     //生成render方法(render方法执行后返回虚拟DOM)
-    console.log(ast)
 
-    ast = codegen(ast);
-    console.log(ast)
-    // render(){
+    let code = codegen(ast);
+    //with(this){
+    //     console.log(this.a)
     // }
+    code = `with(this){return ${code}}`
+    let render = new Function(code)  //根据代码生成render函数
+
+    return render
 }
