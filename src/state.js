@@ -3,7 +3,7 @@ import { observe } from './observe/index'
 
 
 export function initState(vm){
-    const opts = vm.$options; // 获取1options
+    const opts = vm.$options; // 获取options
     if(opts.data){
         initData(vm)
     }

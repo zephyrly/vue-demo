@@ -7,7 +7,7 @@ import { mountComponent } from './lifecycle'
 // 给Vue增加init方法
 export function initMinix(Vue) {
     // 给vue增加init方法
-    Vue.prototype._init = function (options) {
+Vue.prototype._init = function (options) {
         // 用于初始化操作
         // vue $options获取用户的配置
 
@@ -17,16 +17,15 @@ export function initMinix(Vue) {
 
         //初始化状态
         initState(vm)
-
         if (options.el) {
             vm.$mount(options.el) // 实现数据挂载
         }
     }
-    Vue.prototype.$mount = function (el) {
+Vue.prototype.$mount = function (el) {
         const vm = this
         el = document.querySelector(el)
         let ops = vm.$options
-        if (!ops.render) {
+        if (!ops.render) {   
             // 先查找是否存在render函数
             let template // 没有render查找是否存在template,没有template采用外部template
             if (!ops.template && el) {

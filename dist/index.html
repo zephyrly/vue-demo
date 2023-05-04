@@ -40,12 +40,17 @@
             vm.name = 'okzfans'
             vm.age = 18
 
-            vm._update(vm._render()) // 数据变化,手动更新数据真实dom
+            //vm._update(vm._render()) // 数据变化,手动更新数据真实dom
         },1000)
 
         //1.模板引擎 性能会比较差 需要进行正则匹配替换 1.0的时候 没有引入虚拟dom进行修改
         //2..虚拟dom,数据变化通过比较虚拟dom,最后进行数据更新
         //3.核心  ----> 模板变化成js语法，通过js语法生成虚拟dom
+
+        //1.将数据先处理成响应式 initState (针对对象而言为defineproperty,数组，重写方法)
+        //2.模板编译：将template转换成ast树，将ast语法树生成  render  方法
+        //3.调用render函数进行取值操作，产生对应的虚拟dom,render(_c('div',null,_v(name))) 触发get方法
+        //4.虚拟dom转换真实dom
 
 
     </script>

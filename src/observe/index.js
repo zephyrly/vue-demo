@@ -1,5 +1,6 @@
 // observe.js
 import {newArrayProto} from './array'
+import Dep from './dep'
 class Observe{
     constructor(data){
         // Object.defineProperties只能劫持已存在的属性,($set等方案修复)
@@ -24,7 +25,7 @@ class Observe{
         // Object.defineProperty  重新定义属性， 性能差
         Object.keys(data).forEach(key => defineReactive(data,key,data[key]))
     }
-
+ 
     observeArray(data) { // 观测数组
         data.forEach(item => observe(item))
     }
@@ -32,16 +33,21 @@ class Observe{
 
 export function defineReactive(target,key,value){ //闭包
     observe(value) // 对data下的所有对象进行劫持
+    let dep = new Dep(); // 每个属性都有dep
     Object.defineProperty(target,key,{
         get(){
+            if(Dep.target){
+                dep.depend()  // 让属性收集器记住当前watcher
+            }
             console.log('用户取值了',key)
             return value
         },
-        set(newVal){``
+        set(newVal){
             console.log('用户设置值了')
             if(newVal === value) return
             observe(newVal)
             value = newVal
+            dep.notify() // 通知watcher进行更新
         }
     })
 }

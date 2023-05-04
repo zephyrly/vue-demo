@@ -117,7 +117,7 @@
       }
       //push.call(arr)
 
-      var result = (_oldArrayProto$method = oldArrayProto[method]).call.apply(_oldArrayProto$method, [this].concat(args)); // 函数调用原来的方法, 函数的劫持，切片编程
+      var result = (_oldArrayProto$method = oldArrayProto[method]).call.apply(_oldArrayProto$method, [this].concat(args)); // 函数调用原来的方法, 函数的劫持，切片编程(函数切面)
       var inserted;
       var ob = this.__ob__; // 拿到data上的设置的__ob__属性(实例)
       switch (method) {
@@ -129,7 +129,7 @@
           // arr.splice(0,1,{a:1},{a:1})
           inserted = args.slice(2);
       }
-      console.log('inserted====>', inserted); // 新增insert
+      console.log('inserted====>', inserted, this); // 新增insert
       if (inserted) {
         // 对新增的内容再次进行观察
         ob.observeArray(inserted);
@@ -138,6 +138,40 @@
       return result;
     };
   });
+
+  var id$1 = 0;
+  var Dep = /*#__PURE__*/function () {
+    function Dep() {
+      _classCallCheck(this, Dep);
+      this.id = id$1++; // s属性的dep要收集的watcher
+      this.subs = []; // 收集依赖
+    }
+    _createClass(Dep, [{
+      key: "depend",
+      value: function depend() {
+        // 如果页面有两个相同属性，会重复添加dep
+        Dep.target.addDep(this);
+        // this.subs.push()
+        // dep 和 watch 是多对多关系，
+        // dep对应多个watcher 一个属性可以在多规格组件中使用
+        // 一个watcher对应多个dep 一个组件由多个属性组成 
+      }
+    }, {
+      key: "addSub",
+      value: function addSub(watcher) {
+        this.subs.push(watcher);
+      }
+    }, {
+      key: "notify",
+      value: function notify() {
+        this.subs.forEach(function (watcher) {
+          return watcher.update();
+        }); // 告诉watcher要更新了
+      }
+    }]);
+    return Dep;
+  }();
+  Dep.target = null;
 
   var Observe = /*#__PURE__*/function () {
     function Observe(data) {
@@ -182,8 +216,13 @@
   function defineReactive(target, key, value) {
     //闭包
     observe(value); // 对data下的所有对象进行劫持
+    var dep = new Dep(); // 每个属性都有dep
     Object.defineProperty(target, key, {
       get: function get() {
+        if (Dep.target) {
+          dep.depend(); // 让属性收集器记住当前watcher
+        }
+
         console.log('用户取值了', key);
         return value;
       },
@@ -192,9 +231,11 @@
         if (newVal === value) return;
         observe(newVal);
         value = newVal;
+        dep.notify(); // 通知watcher进行更新
       }
     });
   }
+
   function observe(data) {
     //对这个对象进行劫持
     if (_typeof(data) !== 'object' || data === null) {
@@ -211,7 +252,7 @@
 
   // state.js
   function initState(vm) {
-    var opts = vm.$options; // 获取1options
+    var opts = vm.$options; // 获取options
     if (opts.data) {
       initData(vm);
     }
@@ -474,6 +515,51 @@
     };
   }
 
+  // 1) 当创建渲染watcher的时候，将当前渲染watcher放到Dep.target上
+  // 2) 调用 _render() 会取值 走到get上
+
+  // 观察者模式实现自动更新
+  var id = 0;
+
+  // 不同组件有不同watcher 
+  var Watcher = /*#__PURE__*/function () {
+    function Watcher(vm, fn, options) {
+      _classCallCheck(this, Watcher);
+      this.id = id++;
+      this.renderWatcher = options; // 是否为渲染WATCHER
+      this.getter = fn; // getter意味调用这个函数可以发生取值
+      this.deps = []; // 实现计算属性和部分清理工作
+      this.depsId = new Set(); // 后续实现计算属性，和部分清理工作
+      this.get();
+    }
+    _createClass(Watcher, [{
+      key: "addDep",
+      value: function addDep(dep) {
+        // 一个组件 对应多个属性，重复不需要记录
+        var id = dep.id;
+        if (!this.depsId.has(id)) {
+          this.deps.push(dep);
+          this.depsId.add(id);
+          dep.addSub(this); // watcher 已经记住了dep,并且进行去重，此时dep记住了watcher
+        }
+      }
+    }, {
+      key: "get",
+      value: function get() {
+        Dep.target = this; // 静态属性只有一份
+        this.getter(); // 会去vm上取值 vm.
+        Dep.target = null; // 渲染完毕后就清空
+      }
+    }, {
+      key: "update",
+      value: function update() {
+        console.log('update');
+        this.get(); // 重新进行渲染
+      }
+    }]);
+    return Watcher;
+  }(); // 给每个属性加上一个dep,目的收集watcher
+
   // lifecycle.js
   function createElm(vnode) {
     var tag = vnode.tag,
@@ -554,7 +640,11 @@
   function mountComponent(vm, el) {
     vm.$el = el;
     // 1.调用render方法产生虚拟节点,虚拟dom
-    vm._update(vm._render());
+
+    var updateComponent = function updateComponent() {
+      vm._update(vm._render());
+    };
+    new Watcher(vm, updateComponent, true);
 
     // 2.根据虚拟dom产生真实dom
 

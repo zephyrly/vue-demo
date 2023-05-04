@@ -20,7 +20,7 @@ methods.forEach(method => {
     newArrayProto[method] = function(...args){
         //push.call(arr)
 
-        const result = oldArrayProto[method].call(this,...args) // 函数调用原来的方法, 函数的劫持，切片编程
+        const result = oldArrayProto[method].call(this,...args) // 函数调用原来的方法, 函数的劫持，切片编程(函数切面)
         let inserted;
         let ob = this.__ob__ // 拿到data上的设置的__ob__属性(实例)
         switch(method) {
@@ -33,7 +33,7 @@ methods.forEach(method => {
             default: 
                 break
         }
-        console.log('inserted====>',inserted) // 新增insert
+        console.log('inserted====>',inserted,this) // 新增insert
         if(inserted){
             // 对新增的内容再次进行观察
             ob.observeArray(inserted)
