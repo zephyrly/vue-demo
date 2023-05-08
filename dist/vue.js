@@ -553,12 +553,87 @@
     }, {
       key: "update",
       value: function update() {
-        console.log('update');
-        this.get(); // 重新进行渲染
+        queueWatcher(this);
+        // this.get() // 重新进行渲染
+      }
+    }, {
+      key: "run",
+      value: function run() {
+        this.get();
       }
     }]);
     return Watcher;
-  }(); // 给每个属性加上一个dep,目的收集watcher
+  }();
+  var queue = [];
+  var has = {};
+  var pendding = false; // 防抖
+
+  function flushSchedulerQueue() {
+    var flushQueue = queue.slice(0);
+    queue = [];
+    has = {};
+    pendding = false;
+    flushQueue.forEach(function (q) {
+      return q.run();
+    }); // 刷新过程中会有新的watcher,重新进入queue
+  }
+
+  function queueWatcher(watcher) {
+    var id = watcher.id;
+    if (!has[id]) {
+      queue.push(watcher);
+      has[id] = true;
+      // 不管update执行多少次，但最终只执行一轮刷新操作
+
+      if (!pendding) {
+        nextTick(flushSchedulerQueue); // 在主栈js执行完成后，定时器执行数据更新
+        pendding = true;
+      }
+    }
+  }
+  var callbacks = [];
+  var waiting = false;
+  function flushCallbacks() {
+    var cbs = callbacks.slice(0);
+    waiting = true;
+    callbacks = [];
+    cbs.forEach(function (cb) {
+      return cb();
+    }); // 按顺序执行  
+  }
+  // vue中使用优雅降级方式执行nextTick,
+  // 内部首先使用Promise （ie不兼容），MutationObserver(h5浏览器的api), ie中的setImmediate，setImmediate
+  var timerFunc;
+  if (Promise) {
+    timerFunc = function timerFunc() {
+      Promise.resolve().then(flushCallbacks);
+    };
+  } else if (MutationObserver) {
+    var observer = new MutationObserver(flushCallbacks);
+    var textNode = document.createTextNode(1);
+    observer.observe(textNode, {
+      characterData: true
+    });
+    timerFunc = function timerFunc() {
+      textNode.textContent = 2;
+    };
+  } else if (setImmediate) {
+    timerFunc = function timerFunc() {
+      setImmediate(flushCallbacks);
+    };
+  } else {
+    timerFunc = function timerFunc() {
+      setTimeout(flushCallbacks);
+    };
+  }
+  function nextTick(cb) {
+    // 内部，外部执行顺序
+    callbacks.push(cb); // 维护nextTick中的callback
+    if (!waiting) {
+      timerFunc();
+      waiting = true;
+    }
+  }
 
   // lifecycle.js
   function createElm(vnode) {
@@ -714,6 +789,7 @@
     // options => 用户的选项
     this._init(options);
   }
+  Vue.prototype.$nextTick = nextTick;
   initMinix(Vue);
   initLifeCycle(Vue);
 
