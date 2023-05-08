@@ -44,7 +44,7 @@ function gen(node){
                     tokens.push(JSON.stringify(text.slice(lastIndex,index)))
                 }
 
-                console.log(index,'39')
+                console.log(index,'39',tokens)
                 tokens.push(`_s(${match[1].trim()})`)
                 lastIndex = index + match[0].length
             }

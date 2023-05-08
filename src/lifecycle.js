@@ -12,7 +12,7 @@ function createElm(vnode) {
             vnode.el.appendChild(createElm(child))
         })
     } else {
-        vnode.el = document.createTextNode(text)
+        vnode.el = document.createTextNode(JSON.stringify(text))
     }
     return vnode.el
 }

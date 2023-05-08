@@ -134,6 +134,10 @@
         // 对新增的内容再次进行观察
         ob.observeArray(inserted);
       }
+
+      //
+      console.log(ob);
+      ob.dep.notify(); // 数组变化通知对应的notify
       console.log('method', method);
       return result;
     };
@@ -176,6 +180,9 @@
   var Observe = /*#__PURE__*/function () {
     function Observe(data) {
       _classCallCheck(this, Observe);
+      // 给每个对象都进行收集
+      this.dep = new Dep();
+
       // Object.defineProperties只能劫持已存在的属性,($set等方案修复)
       //data.__ob__ = this; // 将data的this实例挂在到data的__ob__属性上
 
@@ -215,14 +222,19 @@
   }();
   function defineReactive(target, key, value) {
     //闭包
-    observe(value); // 对data下的所有对象进行劫持
+    var childOb = observe(value); // 对data下的所有对象进行劫持 ，， childOb依赖收集
     var dep = new Dep(); // 每个属性都有dep
     Object.defineProperty(target, key, {
       get: function get() {
         if (Dep.target) {
           dep.depend(); // 让属性收集器记住当前watcher
+          if (childOb) {
+            childOb.dep.depend(); //让数组和对象也能实现依赖收集
+            if (Array.isArray(value)) {
+              dependArray(value);
+            }
+          }
         }
-
         console.log('用户取值了', key);
         return value;
       },
@@ -236,6 +248,16 @@
     });
   }
 
+  // 递归收集数组下的数组依赖，进行依赖收集
+  function dependArray(value) {
+    for (var i = 0; i < value.lenght; i++) {
+      var current = value[i];
+      current.__ob__ && current.__ob__.dep.depend();
+      if (Array.isArray(current)) {
+        dependArray(current);
+      }
+    }
+  }
   function observe(data) {
     //对这个对象进行劫持
     if (_typeof(data) !== 'object' || data === null) {
@@ -443,7 +465,7 @@
           if (index > lastIndex) {
             tokens.push(JSON.stringify(text.slice(lastIndex, index)));
           }
-          console.log(index, '39');
+          console.log(index, '39', tokens);
           tokens.push("_s(".concat(match[1].trim(), ")"));
           lastIndex = index + match[0].length;
         }
@@ -498,6 +520,7 @@
 
   // _v()
   function createTextVNode(vm, text) {
+    console.log('texttexttexttext', text);
     return vnode(vm, undefined, undefined, undefined, undefined, text);
   }
 
@@ -649,7 +672,7 @@
         vnode.el.appendChild(createElm(child));
       });
     } else {
-      vnode.el = document.createTextNode(text);
+      vnode.el = document.createTextNode(JSON.stringify(text));
     }
     return vnode.el;
   }

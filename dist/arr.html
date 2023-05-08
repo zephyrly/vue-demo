@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+    <body>
+        <!-- 调用JSON..stringfly 会对数组中的对象取值 所以对象会收集依赖 -->
+        <!-- _v(_s(arr)) -->
+        <div id="app">
+            <div key="123" style="color: red; font-size: 12px">{{hobby}}</div>
+            <div style="color: skyblue;">{{obj}}</div>
+        </div>
+        <script src="vue.js"></script>
+        <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script> -->
+        <script>
+            const vm = new Vue({
+                el: '#app',
+                data: {
+                    hobby: ['eat', 'drink', ['a','b','c',[]],, { a: 1 }], // 数组的劫持，只针对这个数组本身
+                    a: 100,
+                    obj: {num:123}, // 对象增加劫持
+                },
+                // template: '<div>12312</div>'
+                //el:'#app', // 将数据解析到el元素上
+                // methods: {
+                //     changeClick() {
+                //         vm.hobby[0] = 100 // 只重写了数组方法
+                //         console.log(vm.hobby)
+
+                //         // vm.a=300;
+
+                //         // vm.hobby.length = 10
+
+                //         // vm.hobby.push(110, 111, 112) // 改变的不是arr属性，而是arr对象
+                //     },
+                // },
+            })
+            vm.a = 300
+
+            vm.hobby[0] = '12312'
+            vm.hobby[2].push('a122')
+
+            vm.obj.c = '1423534' //  对象新增属性，不使用this.$set能进行视图更新
+            vm.obj.__ob__.dep.notify() // 不加设置不生效  $set原理
+
+            // vm.hobby.length = 10
+
+            // vm.hobby.push(110, 111, 112) // 改变的不是arr属性，而是arr对象
+            // vm.$mount('#app')
+
+            // 1.数组更新首次渲染前，能进行更新，
+            // 2.数组更新某个成员时，arr[0]=1,不触发视图更新，因为没有对每个成员进行劫持，值变化不更新
+        </script>
+    </body>
+</html>

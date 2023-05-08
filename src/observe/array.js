@@ -39,6 +39,9 @@ methods.forEach(method => {
             ob.observeArray(inserted)
         }
 
+        //
+        console.log(ob)
+        ob.dep.notify(); // 数组变化通知对应的notify
         console.log('method',method)
         return result
     }
