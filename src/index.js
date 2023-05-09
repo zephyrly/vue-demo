@@ -1,5 +1,5 @@
 // vue
-import { initGlobalApi } from './goobalApi'
+import { initGlobalApi } from './globalApi'
 import { initMixin } from './init'
 import { initLifeCycle } from './lifecycle'
 import { initStateMixin } from './state'
