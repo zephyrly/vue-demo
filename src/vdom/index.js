@@ -12,7 +12,6 @@ export function createElementVNode(vm, tag, data = {}, ...children) {
 
 // _v()
 export function createTextVNode(vm, text) {
-    console.log('texttexttexttext',text)
     return vnode(vm, undefined, undefined, undefined, undefined, text)
 }
 

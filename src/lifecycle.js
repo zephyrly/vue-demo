@@ -75,7 +75,7 @@ export function initLifeCycle(Vue) {
 
     Vue.prototype._render = function () {
         const vm = this
-        console.log('_render')
+        // console.log('_render')
         // 让vm中的this指向vm
         return this.$options.render.call(vm)
         console.log('_render') // 通过ast语法转义后生成的render方法

@@ -1,5 +1,5 @@
 // watch.js
-import Dep from "./dep";
+import Dep, { popTarget, pushTarget } from "./dep";
 
 // 1) 当创建渲染watcher的时候，将当前渲染watcher放到Dep.target上
 // 2) 调用 _render() 会取值 走到get上
@@ -9,13 +9,28 @@ let id = 0;
 
 // 不同组件有不同watcher 
 class Watcher{
-    constructor(vm,fn,options){
+    constructor(vm,exportFn,options, cb){
         this.id = id++;
+        this.vm = vm;
         this.renderWatcher = options // 是否为渲染WATCHER
-        this.getter = fn;  // getter意味调用这个函数可以发生取值
+        
+        if(typeof exportFn === 'string'){
+            this.getter = function(){
+                return vm[exportFn]
+            }
+        } else {
+            this.getter = exportFn;  // getter意味调用这个函数可以发生取值
+        }
         this.deps = []; // 实现计算属性和部分清理工作
         this.depsId = new Set(); // 后续实现计算属性，和部分清理工作
-        this.get();
+
+        this.lazy = options.lazy;
+        this.dirty = this.lazy; // 缓存值
+
+        this.user = options.user;
+        this.cb = cb;
+        
+        this.value = this.lazy ? undefined : this.get();
     }
 
     addDep(dep){ // 一个组件 对应多个属性，重复不需要记录
@@ -27,19 +42,44 @@ class Watcher{
         }
     }
 
+    evaluate(){
+        this.value = this.get(); // 获取过户函数的返回值,标识为脏
+        this.dirty = false;
+    }
+
     get() {
-        Dep.target = this; // 静态属性只有一份
-        this.getter(); // 会去vm上取值 vm.
-        Dep.target = null; // 渲染完毕后就清空
+        pushTarget(this)
+        // Dep.target = this; // 静态属性只有一份
+        let value = this.getter.call(this.vm); // 会去vm上取值 vm._update(vm._render) 取值naame,age
+        // Dep.target = null; // 渲染完毕后就清空
+        popTarget()
+        return value
+    }
+
+    depend(){
+        let i = this.deps.length
+        while(i--){
+            // dep.depends
+            this.deps[i].depend(); // 让计算属性也收集渲染watcher
+        }
     }
 
     update(){
-        queueWatcher(this);
-        // this.get() // 重新进行渲染
+        if(this.lazy){
+            // 如果是计算属性 ,则标记值为脏数据, 
+            this.dirty = true
+        } else {
+            queueWatcher(this);
+            // this.get() // 重新进行渲染
+        }
     }
 
     run() {
-        this.get()
+        let oldValue = this.value;
+        let newValue = this.get(); // 渲染的时候用的是最新的vm进行渲染
+        if(this.user){
+            this.cb.call(this.vm,newValue, oldValue)
+        }
     }
 
 }
