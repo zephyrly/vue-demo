@@ -9,19 +9,23 @@
     <body>
         <div id="app">
             <div key="123" style="color: red; font-size: 12px">
-                {{fullname}}
+                {{fistname}} {{lastname}}
             </div>
         </div>
         <script src="vue.js"></script>
         <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script> -->
         <script>
-            // 1.diff 算法
+            // 1.diff算法
             const vm = new Vue({
                 el: '#app',
                 data: {
                     fistname: 'ok',
                     lastname: 'fans'
                 },
+                beforeMount(){
+                    console.log('beforeMount')
+                },
+
 
                 methods: {
                     fn(newValue, oldValue) {

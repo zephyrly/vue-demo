@@ -1,141 +1,160 @@
 // watch.js
-import Dep, { popTarget, pushTarget } from "./dep";
+import Dep, { popTarget, pushTarget } from './dep'
 
 // 1) 当创建渲染watcher的时候，将当前渲染watcher放到Dep.target上
 // 2) 调用 _render() 会取值 走到get上
 
 // 观察者模式实现自动更新
-let id = 0;
+let id = 0
 
-// 不同组件有不同watcher 
-class Watcher{
-    constructor(vm,exportFn,options, cb){
-        this.id = id++;
-        this.vm = vm;
+// 不同组件有不同watcher
+class Watcher {
+    constructor(vm, exportFn, options, cb) {
+        this.id = id++
+        this.vm = vm
         this.renderWatcher = options // 是否为渲染WATCHER
-        
-        if(typeof exportFn === 'string'){
-            this.getter = function(){
-                return vm[exportFn]
+
+        if (typeof exportFn === 'string') {
+            this.getter = function () {
+                //用户watcher传过来的可能是一个字符串   类似a.a.a.a.b
+                let path = exprOrFn.split('.')
+                let obj = vm
+                for (let i = 0; i < path.length; i++) {
+                    obj = obj[path[i]] //vm.a.a.a.a.b
+                }
+                return obj
             }
         } else {
-            this.getter = exportFn;  // getter意味调用这个函数可以发生取值
+            this.getter = exportFn // getter意味调用这个函数可以发生取值
         }
-        this.deps = []; // 实现计算属性和部分清理工作
-        this.depsId = new Set(); // 后续实现计算属性，和部分清理工作
+        this.deps = [] // 实现计算属性和部分清理工作
+        this.depsId = new Set() // 后续实现计算属性，和部分清理工作
 
-        this.lazy = options.lazy;
-        this.dirty = this.lazy; // 缓存值
+        this.lazy = options.lazy
+        this.dirty = this.lazy // 缓存值
 
-        this.user = options.user;
-        this.cb = cb;
-        
-        this.value = this.lazy ? undefined : this.get();
+        this.user = options.user
+        this.cb = cb
+
+        this.value = this.lazy ? undefined : this.get()
     }
 
-    addDep(dep){ // 一个组件 对应多个属性，重复不需要记录
-        let id = dep.id;
-        if(!this.depsId.has(id)){
+    addDep(dep) {
+        // 一个组件 对应多个属性，重复不需要记录
+        let id = dep.id
+        if (!this.depsId.has(id)) {
             this.deps.push(dep)
             this.depsId.add(id)
-            dep.addSub(this)  // watcher 已经记住了dep,并且进行去重，此时dep记住了watcher
+            dep.addSub(this) // watcher 已经记住了dep,并且进行去重，此时dep记住了watcher
         }
     }
 
-    evaluate(){
-        this.value = this.get(); // 获取过户函数的返回值,标识为脏
-        this.dirty = false;
+    evaluate() {
+        this.value = this.get() // 获取过户函数的返回值,标识为脏
+        this.dirty = false
     }
 
     get() {
         pushTarget(this)
         // Dep.target = this; // 静态属性只有一份
-        let value = this.getter.call(this.vm); // 会去vm上取值 vm._update(vm._render) 取值naame,age
+        let value = this.getter.call(this.vm) // 会去vm上取值 vm._update(vm._render) 取值naame,age
         // Dep.target = null; // 渲染完毕后就清空
         popTarget()
         return value
     }
 
-    depend(){
+    depend() {
         let i = this.deps.length
-        while(i--){
+        while (i--) {
             // dep.depends
-            this.deps[i].depend(); // 让计算属性也收集渲染watcher
+            this.deps[i].depend() // 让计算属性也收集渲染watcher
         }
     }
 
-    update(){
-        if(this.lazy){
-            // 如果是计算属性 ,则标记值为脏数据, 
+    update() {
+        if (this.lazy) {
+            // 如果是计算属性 ,则标记值为脏数据,
             this.dirty = true
         } else {
-            queueWatcher(this);
+            queueWatcher(this)
             // this.get() // 重新进行渲染
         }
     }
 
+    // run() {
+    //     let oldValue = this.value;
+    //     let newValue = this.get(); // 渲染的时候用的是最新的vm进行渲染
+    //     if(this.user){
+    //         this.cb.call(this.vm,newValue, oldValue)
+    //     }
+    // }
+
     run() {
-        let oldValue = this.value;
-        let newValue = this.get(); // 渲染的时候用的是最新的vm进行渲染
-        if(this.user){
-            this.cb.call(this.vm,newValue, oldValue)
+        const newVal = this.get() //新值
+        const oldVal = this.value //老值
+        this.value = newVal //跟着之后  老值就成为了现在的值
+        if (this.user) {
+            if (newVal !== oldVal || isObject(newVal)) {
+                this.cb.call(this.vm, newVal, oldVal)
+            }
+        } else {
+            // 渲染watcher
+            // this.cb.call(this.vm, newVal, oldVal)
         }
     }
-
 }
 
 let queue = []
 let has = {}
 let pendding = false // 防抖
 
-function flushSchedulerQueue(){
-    let flushQueue = queue.slice(0);
-    queue=[];
-    has ={};
-    pendding = false;
-    flushQueue.forEach(q => q.run()); // 刷新过程中会有新的watcher,重新进入queue
+function flushSchedulerQueue() {
+    let flushQueue = queue.slice(0)
+    queue = []
+    has = {}
+    pendding = false
+    flushQueue.forEach((q) => q.run()) // 刷新过程中会有新的watcher,重新进入queue
 }
-function queueWatcher(watcher){
-    let id = watcher.id;
-    if(!has[id]){
-        queue.push(watcher);
-        has[id] = true;
+function queueWatcher(watcher) {
+    let id = watcher.id
+    if (!has[id]) {
+        queue.push(watcher)
+        has[id] = true
         // 不管update执行多少次，但最终只执行一轮刷新操作
 
-        if(!pendding){
-            nextTick(flushSchedulerQueue,0)  // 在主栈js执行完成后，定时器执行数据更新
-            pendding = true;
+        if (!pendding) {
+            nextTick(flushSchedulerQueue, 0) // 在主栈js执行完成后，定时器执行数据更新
+            pendding = true
         }
     }
-    
 }
 
-let callbacks = [];
-let waiting = false;
+let callbacks = []
+let waiting = false
 
-function flushCallbacks(){
+function flushCallbacks() {
     let cbs = callbacks.slice(0)
-    waiting =true
+    waiting = true
     callbacks = []
-    cbs.forEach(cb =>cb()) // 按顺序执行  
+    cbs.forEach((cb) => cb()) // 按顺序执行
 }
 // vue中使用优雅降级方式执行nextTick,
 // 内部首先使用Promise （ie不兼容），MutationObserver(h5浏览器的api), ie中的setImmediate，setImmediate
-let timerFunc;
-if(Promise){
+let timerFunc
+if (Promise) {
     timerFunc = () => {
         Promise.resolve().then(flushCallbacks)
     }
-} else if(MutationObserver){
+} else if (MutationObserver) {
     let observer = new MutationObserver(flushCallbacks)
-    let textNode = document.createTextNode(1);
-    observer.observe(textNode,{
-        characterData:true
+    let textNode = document.createTextNode(1)
+    observer.observe(textNode, {
+        characterData: true,
     })
     timerFunc = () => {
         textNode.textContent = 2
     }
-} else if(setImmediate) {
+} else if (setImmediate) {
     timerFunc = () => {
         setImmediate(flushCallbacks)
     }
@@ -145,9 +164,10 @@ if(Promise){
     }
 }
 
-export function nextTick(cb){ // 内部，外部执行顺序
+export function nextTick(cb) {
+    // 内部，外部执行顺序
     callbacks.push(cb) // 维护nextTick中的callback
-    if(!waiting) {
+    if (!waiting) {
         timerFunc()
         waiting = true
     }

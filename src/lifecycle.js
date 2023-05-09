@@ -1,50 +1,7 @@
 // lifecycle.js
 import { createElementVNode, createTextVNode } from './vdom/index'
 import Watcher from './observe/watcher'
-
-function createElm(vnode) {
-    let { tag, data, children, text } = vnode
-    if (typeof tag === 'string') {
-        //标签
-        vnode.el = document.createElement(tag) // 将真实节点与虚拟节点进行对应，后续方便修改属性
-        patchProps(vnode.el, data)
-        children.forEach((child) => {
-            vnode.el.appendChild(createElm(child))
-        })
-    } else {
-        vnode.el = document.createTextNode(JSON.stringify(text))
-    }
-    return vnode.el
-}
-
-function patchProps(el, props) {
-    for (let key in props) {
-        if (key === 'style') {
-            // style(color:'red')
-            for (let styleName in props.style) {
-                el.style[styleName] = props.style[styleName]
-            }
-        } else {
-            el.setAttribute(key, props[key])
-        }
-    }
-}
-
-function patch(oldVNode, vnode) {
-    // 初渲染流程
-    const isRealElement = oldVNode.nodeType
-    if (isRealElement) {
-        const elm = oldVNode // 获取真实元素
-        const parentElm = elm.parentNode // 拿到父元素
-        let newElm = createElm(vnode) // 生成真实dom
-        parentElm.insertBefore(newElm, elm.nextSibiling)
-        parentElm.removeChild(elm) // 删除老节点
-        console.log(newElm)
-        return newElm
-    } else {
-        // diff 算法
-    }
-}
+import { patch } from './vdom/patch'
 
 export function initLifeCycle(Vue) {
     // 虚拟dom转换真实dom
@@ -83,19 +40,25 @@ export function initLifeCycle(Vue) {
 }
 
 export function mountComponent(vm, el) {
-    vm.$el = el
     // 1.调用render方法产生虚拟节点,虚拟dom
-
-    const updateComponent = () => {
-        vm._update(vm._render())
-    }
-
-    new Watcher(vm, updateComponent, true)
-
+    vm.$el = el;
+    // 引入watcher的概念 这里注册一个渲染watcher 执行vm._update(vm._render())方法渲染视图
+    callHook(vm, "beforeMount"); //初始渲染之前
+    let updateComponent = () => {
+      vm._update(vm._render());
+    };
+    new Watcher(
+      vm,
+      updateComponent,
+      () => {
+        callHook(vm, "beforeUpdate"); //更新之前
+      },
+      true
+    );
+    callHook(vm, "mounted"); //渲染完成之后
     // 2.根据虚拟dom产生真实dom
-
     // 3.插入el元素中
-}
+  }
 
 // vue核心流程：
 // 1.创造了响应式数据
