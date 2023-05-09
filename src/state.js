@@ -1,7 +1,7 @@
 // state.js
 import { observe } from './observe/index'
-import Watcher from './observe/watcher'
 import Dep from './observe/dep'
+import Watcher, { nextTick } from './observe/watcher'
 
 //  处理new Vue中的值
 export function initState(vm) {
@@ -43,7 +43,7 @@ export function initData(vm) {
 
 export function initComputed(vm) {
     const computed = vm.$options.computed
-    const watchers = vm._computedWatchers = {}; // 将计算属性watcheer保存到vm上
+    const watchers = (vm._computedWatchers = {}) // 将计算属性watcheer保存到vm上
     for (let key in computed) {
         let userDef = computed[key]
 
@@ -51,30 +51,30 @@ export function initComputed(vm) {
         let fn = typeof userDef === 'function' ? userDef : userDef.get
 
         // 如果直接new watcher 默认执行fn
-        watchers[key] = new Watcher(vm, fn, {lazy: true})
+        watchers[key] = new Watcher(vm, fn, { lazy: true })
 
         defineComputed(vm, key, userDef)
     }
 }
 
-export function initWatch(vm){
+export function initWatch(vm) {
     const watch = vm.$options.watch
 
-    for(let key in watch){
-        const handler = watch[key]; // 支付串 数组 函数
+    for (let key in watch) {
+        const handler = watch[key] // 支付串 数组 函数
 
-        if(Array.isArray(handler)){
-            for(let i = 0;i< handler.length;i++){
-                creatWatcher(vm ,key ,handler)
+        if (Array.isArray(handler)) {
+            for (let i = 0; i < handler.length; i++) {
+                creatWatcher(vm, key, handler)
             }
         } else {
-            creatWatcher(vm ,key ,handler)
+            creatWatcher(vm, key, handler)
         }
     }
 }
 
-function creatWatcher(vm, key, handler){
-    if( typeof handler === 'string'){
+function creatWatcher(vm, key, handler) {
+    if (typeof handler === 'string') {
         handler = vm[handler]
     }
 
@@ -88,21 +88,29 @@ function defineComputed(target, key, userDef) {
     //  通过实例拿到属性
     Object.defineProperty(target, key, {
         get: createComputedGetter(key),
-        set: setter
+        set: setter,
     })
 }
 
 // 计算属性不会收集依赖， 只会让自己的依赖收集依赖
-function createComputedGetter(key){
-    return function(){
-        const watcher = this._computedWatchers[key]; // 获取到对应属性watcher
-        if(watcher.dirty){
-            watcher.evaluate()  // 执行后会在计算属性中，渲染watcher后创建一个计算属性的watcher
+function createComputedGetter(key) {
+    return function () {
+        const watcher = this._computedWatchers[key] // 获取到对应属性watcher
+        if (watcher.dirty) {
+            watcher.evaluate() // 执行后会在计算属性中，渲染watcher后创建一个计算属性的watcher
         }
-        if(Dep.target){ // 如果计算属性出栈后 还要渲染watcher 需要将计算属性的watcher 去收集上一层的渲染watcher
+        if (Dep.target) {
+            // 如果计算属性出栈后 还要渲染watcher 需要将计算属性的watcher 去收集上一层的渲染watcher
             watcher.depend()
         }
-        return watcher.value  // 返回watcher的值
+        return watcher.value // 返回watcher的值
     }
 }
 
+export function initStateMixin(Vue) {
+    // 绥中转换的都是$watch
+    Vue.prototype.$nextTick = nextTick
+    Vue.prototype.$watch = function (exportFn, cb, options = {}) {
+        new Watcher(this, exportFn, { user: true }, cb)
+    }
+}
