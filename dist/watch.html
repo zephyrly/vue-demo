@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+    <body>
+        <div id="app">
+            <div key="123" style="color: red; font-size: 12px">
+                {{fullname}}
+            </div>
+        </div>
+        <script src="vue.js"></script>
+        <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script> -->
+        <script>
+            // 1.计算属性 2.watch原理 3.数组响应式原理
+            const vm = new Vue({
+                el: '#app',
+                data: {
+                    fistname: 'ok',
+                    lastname: 'fans'
+                },
+
+                methods: {
+                    fn(newValue, oldValue) {
+                        console.log(newValue, oldValue)
+                    },
+                },
+
+                // 直接写一个函数
+                computed: {
+                    // fistname: 'fn'
+                    // fistname: (newValue, oldValue) => {
+                    //     console.log(newValue, oldValue)
+                    // },
+                    fullname() {
+                        console.log('run')
+                        return this.fistname + this.lastname 
+                    },
+                },
+            })
+            // 底层都会转换成$watch的写法
+            
+            vm.$watch(
+                () => vm.fistname,
+                function cb(newValue, oldValue) {
+                    console.log(newValue, oldValue)
+                }
+            )
+
+            setTimeout(() => {
+                vm.fistname = 'okz'
+            }, 1000)
+        </script>
+    </body>
+</html>

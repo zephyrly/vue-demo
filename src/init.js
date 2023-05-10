@@ -1,53 +1,50 @@
-//  initMinix
-// init.js
-import { initState } from './state'
+import { initState } from "./state"
 import { compileToFunction } from './compiler/index'
-import { mountComponent } from './lifecycle'
+import { callHook, mountComponent } from "./lifecycle"
+import { mergeOptions } from "./utils"
 
-// 给Vue增加init方法
-export function initMinix(Vue) {
-    // 给vue增加init方法
-Vue.prototype._init = function (options) {
-        // 用于初始化操作
-        // vue $options获取用户的配置
-
-        // 我们使用 vue时 $nextTick $data $attr.....
+// 给vue增加init方法
+export function initMixin(Vue) {
+    // 用于初始化操作
+    Vue.prototype._init = function (options) {
+        // vue中,vm.$options 就是获取用户的配置
         const vm = this
-        vm.$options = options //将给用户的1选项挂载到实例上
-
-        //初始化状态
+        vm.$options = mergeOptions(this.constructor.options,options)  // 将用户的选项挂载到实例上
+        // 初始化状态
+        callHook(vm,'beforeCreate')
         initState(vm)
+        callHook(vm,'created')
+
         if (options.el) {
-            vm.$mount(options.el) // 实现数据挂载
+            vm.$mount(options.el)   // 实现数据挂载
         }
     }
-Vue.prototype.$mount = function (el) {
+    Vue.prototype.$mount = function (el) {
         const vm = this
         el = document.querySelector(el)
+
         let ops = vm.$options
-        if (!ops.render) {   
-            // 先查找是否存在render函数
-            let template // 没有render查找是否存在template,没有template采用外部template
-            if (!ops.template && el) {
-                // 无模板，但存在el
+        if (!ops.render) {                 // 先查找有没有render函数
+            let template                 // 没有render，在看有没有template，没有template，采用外部的template
+            if (!ops.template && el) {     // 没有模板，但是有el
                 template = el.outerHTML
             } else {
-                if (el) {
-                    template = ops.template // 如果有el, 采用模板内容
+                if (el) {                 // 如果有el，则采用模板内容
+                    template = ops.template
                 }
             }
-
-            // 编译template模板
-            if (template && el) {
+            // 写了temlate，就直接使用
+            if (template) {
+                // 这里我们需要对模板进行编译
                 const render = compileToFunction(template)
-                ops.render = render // jsx最终会编译成h('xxx')
+                ops.render = render  // jsx最终编译成h('xxx',{xxx})
             }
-            ops.render
-            console.log('ast树形结构',ops.render)
-
-            // script 标签引用vue.config.js 这个编译过程在浏览器运行
-            // runtime是不包含模板编译，整个编译打包时通过loader进行转义vue文件，runtime时不能使用template
         }
-        mountComponent(vm,el); // 组件挂载
+        mountComponent(vm,el)  // 组件挂载
+        // console.log(ops.render)   // 最终我们获取render方法
+
+        // script 变标签引用vue.global.js   这个编译过程是浏览器运行的
+        // runtime 不包含模板编译，整个编译过程通过loader转义vue文件，
     }
 }
+

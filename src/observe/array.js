@@ -33,13 +33,16 @@ methods.forEach(method => {
             default: 
                 break
         }
-        console.log('inserted====>',inserted,this) // 新增insert
+        // console.log('inserted====>',inserted,this) // 新增insert
         if(inserted){
             // 对新增的内容再次进行观察
             ob.observeArray(inserted)
         }
 
-        console.log('method',method)
+        //
+        // console.log(ob)
+        ob.dep.notify(); // 数组变化通知对应的notify
+        // console.log('method',method)
         return result
     }
 })

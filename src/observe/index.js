@@ -3,6 +3,10 @@ import {newArrayProto} from './array'
 import Dep from './dep'
 class Observe{
     constructor(data){
+
+        // 给每个对象都进行收集
+        this.dep = new Dep();
+
         // Object.defineProperties只能劫持已存在的属性,($set等方案修复)
         //data.__ob__ = this; // 将data的this实例挂在到data的__ob__属性上
 
@@ -32,12 +36,18 @@ class Observe{
 }
 
 export function defineReactive(target,key,value){ //闭包
-    observe(value) // 对data下的所有对象进行劫持
+    let childOb = observe(value) // 对data下的所有对象进行劫持 ，， childOb依赖收集
     let dep = new Dep(); // 每个属性都有dep
     Object.defineProperty(target,key,{
         get(){
             if(Dep.target){
                 dep.depend()  // 让属性收集器记住当前watcher
+                if(childOb){
+                    childOb.dep.depend();  //让数组和对象也能实现依赖收集
+                    if(Array.isArray(value)){
+                        dependArray(value)
+                    }
+                }
             }
             console.log('用户取值了',key)
             return value
@@ -50,6 +60,17 @@ export function defineReactive(target,key,value){ //闭包
             dep.notify() // 通知watcher进行更新
         }
     })
+}
+
+// 递归收集数组下的数组依赖，进行依赖收集
+function dependArray(value){
+    for(let i  =0; i< value.lenght;i++){
+        let current = value[i]
+        current.__ob__&&current.__ob__.dep.depend();
+        if(Array.isArray(current)){
+            dependArray(current)
+        }
+    }
 }
 
 export function observe(data){
