@@ -985,35 +985,6 @@
     }
   }
 
-  // function updateChildren(el, oldChildren, newChildren){
-  //     let oldStartIndex = 0
-  //     let newStartIndex = 0
-
-  //     let oldEndIndex = oldChildren.length - 1
-  //     let newEndIndex = newChildren.length - 1
-
-  //     let oldStartVnode = oldChildren[oldEndIndex]
-  //     let newStartVnode = newChildren[newEndIndex]
-
-  //     while(oldStartIndex <= oldEndIndex && newStartIndex <= newEndIndex){
-  //         // 双方有一方指针，大于尾部指针则停止循环
-  //         if(isSameVnode(oldStartVnode,newStartVnode)){
-  //             patchVnode(oldStartVnode,newStartVnode); // 如果相同节点 则递归比较子节点
-  //             oldStartVnode = oldChildren[++oldEndIndex]
-  //             newStartVnode = newChildren[++newEndIndex]
-
-  //             // 比较开头节点
-  //         }
-  //     }
-  //     if(newStartIndex <= newEndIndex){
-  //         for(let i = newStartIndex; i <= newEndIndex; i++){
-  //             let childEl = createElm(newChildren[i])
-  //             el.appendChild(childEl)
-  //         }
-  //     }
-
-  // }
-
   // diff算法核心 采用双指针的方式 对比新老vnode的儿子节点
   function updateChildren(parent, oldCh, newCh) {
     var oldStartIndex = 0; //老儿子的起始下标
@@ -1079,6 +1050,7 @@
           parent.insertBefore(moveVnode.el, oldStartVnode.el); //把找到的节点移动到最前面
           patch(moveVnode, newStartVnode);
         }
+        newStartVnode = newCh[++newStartIndex]; // 将新节点往后移动一位
       }
     }
     // 如果老节点循环完毕了 但是新节点还有  证明  新节点需要被添加到头部或者尾部
